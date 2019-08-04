@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=XCoins
+GenericName=Coins X-ray spectrum processor
+Comment=Coins X-ray spectrum processor
+Keywords=spectrum;xray;experiment;laboratory;
+Categories=GTK;Education;Graphics;Science;
+Exec=xcoins
+# Translators: This is an icon name, don't translate!
+Icon=xcoins
+StartupNotify=true
+Terminal=false
+Type=Application
