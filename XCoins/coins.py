@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import xml.etree.ElementTree as et
 from collections import OrderedDict
 
 import numpy as np
@@ -8,7 +9,15 @@ from PySide2.QtCore import QObject, Signal
 
 
 def read_spectrum(path):
-    return np.loadtxt(path, delimiter=";", usecols=1)
+    tree = et.parse(path)
+    root = tree.getroot()
+    class_instance = root.find("ClassInstance")
+
+    # name = class_instance.attrib["Name"]
+    channels = class_instance.find("Channels")
+    spectrum = np.asarray(channels.text.split(","), dtype=np.float32)
+
+    return spectrum
 
 
 class Coins(QObject):
@@ -21,8 +30,8 @@ class Coins(QObject):
 
         self.tags = np.array([])
         self.tags_found = None
-        self.spectrum = np.array([])
-        self.labels = []
+        self.spectrum = None
+        self.labels = None
 
         self.pool = multiprocessing_pool
 
@@ -35,13 +44,11 @@ class Coins(QObject):
 
         print("coins tag matrix shape: ", self.tags.shape)
 
-        self.spectrum, self.labels = self.get_spectrum()
-
-        self.new_spectrum.emit()
+        self.get_spectrum()
 
     def get_spectrum(self):
-        spectrum = []
-        labels = []
+        self.spectrum = []
+        self.labels = []
         f_list = []
         self.tags_found = []
 
@@ -50,10 +57,10 @@ class Coins(QObject):
 
             for n, col in enumerate(row):
                 if n > 0:
-                    f_path = os.path.join(self.working_directory, col + ".txt")
+                    f_path = os.path.join(self.working_directory, col + ".spx")
 
                     if os.path.isfile(f_path):
-                        labels.append(row[0])
+                        self.labels.append(row[0])
 
                         f_list.append(f_path)
 
@@ -67,12 +74,12 @@ class Coins(QObject):
 
         self.tags_found = np.asarray(self.tags_found)
 
-        spectrum = self.pool.map(read_spectrum, f_list)
+        self.spectrum = self.pool.map(read_spectrum, f_list)
 
-        labels = list(OrderedDict.fromkeys(labels))
-        spectrum = np.asarray(spectrum)
+        self.labels = list(OrderedDict.fromkeys(self.labels))
+        self.spectrum = np.asarray(self.spectrum)
 
-        print("spectrum shape: ", spectrum.shape)
+        print("spectrum shape: ", self.spectrum.shape)
 
         """
             In order to the average fast we reshape the matrix in a higher dimensionality. It is now a cube where
@@ -81,8 +88,11 @@ class Coins(QObject):
             np.mean in the axis = 1 (the one with 3 rows)
         """
 
-        spectrum = spectrum.reshape(int(spectrum.shape[0] / 3), 3, spectrum.shape[1])
+        if self.spectrum.shape[0] % 3 == 0:
+            self.spectrum = self.spectrum.reshape(int(self.spectrum.shape[0] / 3), 3, self.spectrum.shape[1])
 
-        avg_spectrum = np.mean(spectrum, axis=1)
+            self.spectrum = np.mean(self.spectrum, axis=1)
+        else:
+            print("Spectrum matrix has wrong size. Can not calculate average!")
 
-        return avg_spectrum, labels
+        self.new_spectrum.emit()

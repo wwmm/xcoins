@@ -46,8 +46,14 @@ class Model(QAbstractTableModel):
         return "{}".format(section)
 
     def data(self, index, role):
-        if role == Qt.BackgroundRole:
-            return QColor(Qt.white)
+        if role == Qt.ForegroundRole:
+            row = index.row()
+
+            if (self.data_file_1[row] == "missing" or self.data_file_2[row] == "missing" or
+                    self.data_file_3[row] == "missing"):
+                return QColor(244, 67, 54, 222)
+            else:
+                return QColor(0, 0, 0, 222)
 
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignRight
