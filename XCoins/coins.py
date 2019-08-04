@@ -9,19 +9,29 @@ from PySide2.QtCore import QObject, Signal
 from multiprocessing import Value, Lock
 
 MAX_ENERGY = Value('d', 0.0)
+MAX_COUNT = Value('i', 0)
+
 lock = Lock()
 
 
 def read_spectrum(path):
     tree = et.parse(path)
 
-    spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.float32)
+    spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.int32)
+
+    maxv = np.max(spectrum)
+
+    # if maxv > 0:
+    #     spectrum = spectrum / maxv
 
     with lock:
         v = float(tree.find(".//MaxEnergy").text.replace(",", "."))
 
         if v > MAX_ENERGY.value:
             MAX_ENERGY.value = v
+
+        if maxv > MAX_COUNT.value:
+            MAX_COUNT.value = maxv
 
     return spectrum
 

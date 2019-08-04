@@ -6,7 +6,7 @@ project('xcoins',
 pymod = import('python')
 i18n_mod = import('i18n')
 
-required_modules = ['PySide2','numpy']
+required_modules = ['PySide2','numpy', 'PySide2.QtCharts']
 
 py3 = pymod.find_installation('python3', modules:required_modules)
 
