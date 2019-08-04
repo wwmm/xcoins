@@ -10,12 +10,16 @@ from PySide2.QtCore import QObject, Signal
 
 def read_spectrum(path):
     tree = et.parse(path)
-    root = tree.getroot()
-    class_instance = root.find("ClassInstance")
 
     # name = class_instance.attrib["Name"]
-    channels = class_instance.find("Channels")
-    spectrum = np.asarray(channels.text.split(","), dtype=np.float32)
+    spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.float32)
+
+    header = dict()
+
+    header["ChannelCount"] = int(tree.find(".//ChannelCount").text)
+    header["MaxEnergy"] = float(tree.find(".//MaxEnergy").text.replace(",", "."))
+
+    print(header)
 
     return spectrum
 
