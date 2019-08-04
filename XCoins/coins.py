@@ -6,6 +6,10 @@ from collections import OrderedDict
 
 import numpy as np
 from PySide2.QtCore import QObject, Signal
+from multiprocessing import Value, Lock
+
+MAX_ENERGY = Value('d', 0.0)
+lock = Lock()
 
 
 def read_spectrum(path):
@@ -13,9 +17,11 @@ def read_spectrum(path):
 
     spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.float32)
 
-    # header = dict()
-    # header["ChannelCount"] = int(tree.find(".//ChannelCount").text)
-    # header["MaxEnergy"] = float(tree.find(".//MaxEnergy").text.replace(",", "."))
+    with lock:
+        v = float(tree.find(".//MaxEnergy").text.replace(",", "."))
+
+        if v > MAX_ENERGY.value:
+            MAX_ENERGY.value = v
 
     return spectrum
 
@@ -96,12 +102,3 @@ class Coins(QObject):
             print("Spectrum matrix has wrong size. Can not calculate average!")
 
         self.new_spectrum.emit()
-
-    def get_max_energy(self, name):
-        f_path = os.path.join(self.working_directory, name + ".spx")
-
-        tree = et.parse(f_path)
-
-        max_energy = float(tree.find(".//MaxEnergy").text.replace(",", "."))
-
-        return max_energy

@@ -5,13 +5,14 @@ import threading
 from multiprocessing import Pool, cpu_count
 
 import h5py
+import numpy as np
 from PySide2.QtCore import QFile, QObject
 from PySide2.QtGui import QColor
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import (QFileDialog, QFrame, QGraphicsDropShadowEffect,
                                QHeaderView, QPushButton, QTableView)
 
-from XCoins.coins import Coins
+from XCoins.coins import MAX_ENERGY, Coins
 from XCoins.model import Model
 
 
@@ -148,8 +149,8 @@ class ApplicationWindow(QObject):
                         To keep things eimple we will read just the first file
                     """
 
-                    max_energy = self.coins.get_max_energy(self.model.data_file_1[row_idx])
+                    print("teste = ", MAX_ENERGY.value)
 
-                    # xaxis, spectrum = self.coins.get_spectrum(name)
+                    xaxis = np.linspace(0, MAX_ENERGY.value, nchannels)
 
-                    print(nchannels, max_energy, spectrum)
+                    print(xaxis)
