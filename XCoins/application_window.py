@@ -125,6 +125,9 @@ class ApplicationWindow(QObject):
                 dset.attrs["pca_sample_labels"] = self.coins.labels
 
     def selection_changed(self, selected, deselected):
+        if self.model.data_name.size == 1:
+            return
+
         s_model = self.table_view.selectionModel()
 
         if s_model.hasSelection():
@@ -132,4 +135,21 @@ class ApplicationWindow(QObject):
 
             for index in indexes:
                 row_idx = index.row()
-                print(row_idx)
+
+                name = self.model.data_name[row_idx]
+
+                if name in self.coins.labels:
+                    pca_matrix_idx = self.coins.labels.index(name)
+                    spectrum = self.coins.spectrum[pca_matrix_idx, :]
+                    nchannels = spectrum.size
+
+                    """
+                        The 3 files should have the same number of chennels and similar values for max energy.
+                        To keep things eimple we will read just the first file
+                    """
+
+                    max_energy = self.coins.get_max_energy(self.model.data_file_1[row_idx])
+
+                    # xaxis, spectrum = self.coins.get_spectrum(name)
+
+                    print(nchannels, max_energy, spectrum)

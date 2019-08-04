@@ -29,11 +29,6 @@ class Model(QAbstractTableModel):
         return self.ncols
 
     def flags(self, index):
-        column = index.column()
-
-        if column == 0:
-            return Qt.ItemIsEnabled
-
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role):

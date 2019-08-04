@@ -11,15 +11,11 @@ from PySide2.QtCore import QObject, Signal
 def read_spectrum(path):
     tree = et.parse(path)
 
-    # name = class_instance.attrib["Name"]
     spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.float32)
 
-    header = dict()
-
-    header["ChannelCount"] = int(tree.find(".//ChannelCount").text)
-    header["MaxEnergy"] = float(tree.find(".//MaxEnergy").text.replace(",", "."))
-
-    print(header)
+    # header = dict()
+    # header["ChannelCount"] = int(tree.find(".//ChannelCount").text)
+    # header["MaxEnergy"] = float(tree.find(".//MaxEnergy").text.replace(",", "."))
 
     return spectrum
 
@@ -33,9 +29,9 @@ class Coins(QObject):
         self.working_directory = ""
 
         self.tags = np.array([])
-        self.tags_found = None
+        self.tags_found = None  # first column has labels but there is repetition
         self.spectrum = None
-        self.labels = None
+        self.labels = None  # labels without repetion
 
         self.pool = multiprocessing_pool
 
@@ -48,9 +44,9 @@ class Coins(QObject):
 
         print("coins tag matrix shape: ", self.tags.shape)
 
-        self.get_spectrum()
+        self.build_pca_matrix()
 
-    def get_spectrum(self):
+    def build_pca_matrix(self):
         self.spectrum = []
         self.labels = []
         f_list = []
@@ -100,3 +96,12 @@ class Coins(QObject):
             print("Spectrum matrix has wrong size. Can not calculate average!")
 
         self.new_spectrum.emit()
+
+    def get_max_energy(self, name):
+        f_path = os.path.join(self.working_directory, name + ".spx")
+
+        tree = et.parse(f_path)
+
+        max_energy = float(tree.find(".//MaxEnergy").text.replace(",", "."))
+
+        return max_energy

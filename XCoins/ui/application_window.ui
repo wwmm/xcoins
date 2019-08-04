@@ -51,10 +51,10 @@
           <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
          </property>
          <property name="selectionMode">
-          <enum>QAbstractItemView::SingleSelection</enum>
+          <enum>QAbstractItemView::ExtendedSelection</enum>
          </property>
          <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectItems</enum>
+          <enum>QAbstractItemView::SelectRows</enum>
          </property>
          <property name="showGrid">
           <bool>false</bool>
