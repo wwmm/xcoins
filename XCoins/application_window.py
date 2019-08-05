@@ -11,10 +11,11 @@ from PySide2.QtCore import QFile, QObject, Qt
 from PySide2.QtGui import QColor, QPainter
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import (QFileDialog, QFrame, QGraphicsDropShadowEffect,
-                               QHeaderView, QPushButton, QTableView)
+                               QHeaderView, QLabel, QPushButton, QTableView)
 
 from XCoins.coins import MAX_COUNT, MAX_ENERGY, Coins
 from XCoins.model import Model
+from XCoins.callout import Callout
 
 
 class ApplicationWindow(QObject):
@@ -33,6 +34,10 @@ class ApplicationWindow(QObject):
         self.pool = Pool(processes=n_cpu_cores)
         self.coins = Coins(self.pool)
         self.model = Model()
+        self.chart = QtCharts.QChart()
+        self.callout = Callout(self.chart)
+
+        self.callout.hide()
 
         # loading widgets from designer file
 
@@ -51,6 +56,7 @@ class ApplicationWindow(QObject):
         button_reset_zoom = self.window.findChild(QPushButton, "button_reset_zoom")
         self.table_view = self.window.findChild(QTableView, "table_view")
         self.chart_view = self.window.findChild(QtCharts.QChartView, "chart_view")
+        self.label_mouse_coords = self.window.findChild(QLabel, "label_mouse_coords")
 
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table_view.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -66,7 +72,6 @@ class ApplicationWindow(QObject):
         self.coins.new_spectrum.connect(self.on_new_spectrum)
 
         # Creating QChart
-        self.chart = QtCharts.QChart()
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
         self.chart.setTheme(QtCharts.QChart.ChartThemeLight)
         self.chart.setAcceptHoverEvents(True)
@@ -200,6 +205,7 @@ class ApplicationWindow(QObject):
                         series = QtCharts.QLineSeries(self.window)
                         series.setName(name)
                         # series.setUseOpenGL(True)
+                        series.hovered.connect(lambda point, state, name=name: self.on_hover(point, state, name))
 
                         for n in range(nchannels):
                             series.append(xaxis[n], spectrum[n])
@@ -208,6 +214,8 @@ class ApplicationWindow(QObject):
 
                     if name not in names_added:
                         self.chart.addSeries(self.series_dict[name])
+
+                        self.reset_zoom()
 
             for s in series_added:
                 if s.name() not in names_selected:
@@ -228,3 +236,15 @@ class ApplicationWindow(QObject):
 
     def reset_zoom(self):
         self.chart.zoomReset()
+
+    def on_hover(self, point, state, name):
+        if state:
+            self.label_mouse_coords.setText("x = {0:.6f}, y = {1:.6f}".format(point.x(), point.y()))
+
+            self.callout.set_text(name)
+            self.callout.set_anchor(point)
+            self.callout.setZValue(11)
+            self.callout.updateGeometry()
+            self.callout.show()
+        else:
+            self.callout.hide()
