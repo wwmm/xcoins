@@ -24,6 +24,7 @@ class ApplicationWindow(QObject):
         self.module_path = os.path.dirname(__file__)
 
         self.tables = []
+        self.series_dict = dict()
 
         n_cpu_cores = cpu_count()
 
@@ -141,6 +142,9 @@ class ApplicationWindow(QObject):
         self.axis_x.setRange(0, MAX_ENERGY.value)
         self.axis_y.setRange(0, MAX_COUNT.value)
 
+        self.series_dict.clear()
+        self.chart.removeAllSeries()
+
     def save_matrix(self):
         home = os.path.expanduser("~")
 
@@ -162,7 +166,12 @@ class ApplicationWindow(QObject):
         s_model = self.table_view.selectionModel()
 
         if s_model.hasSelection():
-            self.chart.removeAllSeries()
+            series_added = self.chart.series()
+            names_added = []
+            names_selected = []
+
+            for s in series_added:
+                names_added.append(s.name())
 
             indexes = s_model.selectedRows()
 
@@ -172,17 +181,26 @@ class ApplicationWindow(QObject):
                 name = self.model.data_name[row_idx]
 
                 if name in self.coins.labels:
-                    pca_matrix_idx = self.coins.labels.index(name)
-                    spectrum = self.coins.spectrum[pca_matrix_idx, :]
-                    nchannels = spectrum.size
+                    names_selected.append(name)
 
-                    xaxis = np.linspace(0, MAX_ENERGY.value, nchannels)
+                    if name not in self.series_dict:
+                        pca_matrix_idx = self.coins.labels.index(name)
+                        spectrum = self.coins.spectrum[pca_matrix_idx, :]
+                        nchannels = spectrum.size
+                        xaxis = np.linspace(0, MAX_ENERGY.value, nchannels)
 
-                    series = QtCharts.QLineSeries(self.window)
-                    series.setName(name)
-                    # series.setUseOpenGL(True)
+                        series = QtCharts.QLineSeries(self.window)
+                        series.setName(name)
+                        # series.setUseOpenGL(True)
 
-                    for n in range(nchannels):
-                        series.append(xaxis[n], spectrum[n])
+                        for n in range(nchannels):
+                            series.append(xaxis[n], spectrum[n])
 
-                    self.chart.addSeries(series)
+                        self.series_dict[name] = series
+
+                    if name not in names_added:
+                        self.chart.addSeries(self.series_dict[name])
+
+            for s in series_added:
+                if s.name() not in names_selected:
+                    self.chart.removeSeries(s)
