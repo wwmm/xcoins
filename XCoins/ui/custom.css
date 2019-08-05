@@ -59,10 +59,7 @@ QFrame {
   padding: 2px;
 }
 
-QFrame#table_cfg_frame,
-QFrame#pc_frame,
-QFrame#normalize_frame,
-QFrame#plot_settings_frame {
+QFrame#chart_cfg_frame {
   background-color: #eceff1;
 }
 

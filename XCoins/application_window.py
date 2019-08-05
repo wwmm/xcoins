@@ -44,8 +44,11 @@ class ApplicationWindow(QObject):
 
         main_frame = self.window.findChild(QFrame, "main_frame")
         chart_frame = self.window.findChild(QFrame, "chart_frame")
+        chart_cfg_frame = self.window.findChild(QFrame, "chart_cfg_frame")
         button_read_tags = self.window.findChild(QPushButton, "button_read_tags")
         button_save_matrix = self.window.findChild(QPushButton, "button_save_matrix")
+        button_save_image = self.window.findChild(QPushButton, "button_save_image")
+        button_reset_zoom = self.window.findChild(QPushButton, "button_reset_zoom")
         self.table_view = self.window.findChild(QTableView, "table_view")
         self.chart_view = self.window.findChild(QtCharts.QChartView, "chart_view")
 
@@ -57,6 +60,8 @@ class ApplicationWindow(QObject):
 
         button_read_tags.clicked.connect(self.read_tags)
         button_save_matrix.clicked.connect(self.save_matrix)
+        button_save_image.clicked.connect(self.save_image)
+        button_reset_zoom.clicked.connect(self.reset_zoom)
         self.table_view.selectionModel().selectionChanged.connect(self.selection_changed)
         self.coins.new_spectrum.connect(self.on_new_spectrum)
 
@@ -96,8 +101,11 @@ class ApplicationWindow(QObject):
 
         main_frame.setGraphicsEffect(self.card_shadow())
         chart_frame.setGraphicsEffect(self.card_shadow())
+        chart_cfg_frame.setGraphicsEffect(self.card_shadow())
         button_read_tags.setGraphicsEffect(self.button_shadow())
         button_save_matrix.setGraphicsEffect(self.button_shadow())
+        button_save_image.setGraphicsEffect(self.button_shadow())
+        button_reset_zoom.setGraphicsEffect(self.button_shadow())
 
         self.window.show()
 
@@ -148,7 +156,7 @@ class ApplicationWindow(QObject):
     def save_matrix(self):
         home = os.path.expanduser("~")
 
-        path = QFileDialog.getSaveFileName(self.window, "Save PCA Matrix",  home, "Matrix (*.hdf5)")[0]
+        path = QFileDialog.getSaveFileName(self.window, "Save PCA Matrix",  home, "HDF5 (*.hdf5)")[0]
 
         if path != "":
             if not path.endswith(".hdf5"):
@@ -204,3 +212,19 @@ class ApplicationWindow(QObject):
             for s in series_added:
                 if s.name() not in names_selected:
                     self.chart.removeSeries(s)
+
+    def save_image(self):
+        home = os.path.expanduser("~")
+
+        path = QFileDialog.getSaveFileName(self.window, "Save Image",  home, "PNG (*.png)")[0]
+
+        if path != "":
+            if not path.endswith(".png"):
+                path += ".png"
+
+            pixmap = self.chart_view.grab()
+
+            pixmap.save(path)
+
+    def reset_zoom(self):
+        self.chart.zoomReset()
