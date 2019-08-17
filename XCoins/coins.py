@@ -6,34 +6,17 @@ from collections import OrderedDict
 
 import numpy as np
 from PySide2.QtCore import QObject, Signal
-from multiprocessing import Value, Lock
-
-MAX_ENERGY = Value('d', 0.0)
-MAX_COUNT = Value('i', 0)
-
-lock = Lock()
 
 
 def read_spectrum(path):
     tree = et.parse(path)
 
     spectrum = np.asarray(tree.find(".//Channels").text.split(","), dtype=np.int32)
+    max_energy = float(tree.find(".//MaxEnergy").text.replace(",", "."))
 
-    maxv = np.max(spectrum)
+    max_count = np.max(spectrum)
 
-    # if maxv > 0:
-    #     spectrum = spectrum / maxv
-
-    with lock:
-        v = float(tree.find(".//MaxEnergy").text.replace(",", "."))
-
-        if v > MAX_ENERGY.value:
-            MAX_ENERGY.value = v
-
-        if maxv > MAX_COUNT.value:
-            MAX_COUNT.value = maxv
-
-    return spectrum
+    return spectrum, max_energy, max_count
 
 
 class Coins(QObject):
@@ -47,6 +30,8 @@ class Coins(QObject):
         self.tags = np.array([])
         self.tags_found = None  # first column has labels but there is repetition
         self.spectrum = None
+        self.max_energy = 0.0
+        self.max_count = 0
         self.labels = None  # labels without repetion
 
         self.pool = multiprocessing_pool
@@ -90,7 +75,16 @@ class Coins(QObject):
 
         self.tags_found = np.asarray(self.tags_found)
 
-        self.spectrum = self.pool.map(read_spectrum, f_list)
+        map_output = self.pool.map(read_spectrum, f_list)
+
+        for s, energy, count in map_output:
+            self.spectrum.append(s)
+
+            if energy > self.max_energy:
+                self.max_energy = energy
+
+            if count > self.max_count:
+                self.max_count = count
 
         self.labels = list(OrderedDict.fromkeys(self.labels))
         self.spectrum = np.asarray(self.spectrum)

@@ -13,9 +13,9 @@ from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import (QFileDialog, QFrame, QGraphicsDropShadowEffect,
                                QHeaderView, QLabel, QPushButton, QTableView)
 
-from XCoins.coins import MAX_COUNT, MAX_ENERGY, Coins
-from XCoins.model import Model
 from XCoins.callout import Callout
+from XCoins.coins import Coins
+from XCoins.model import Model
 
 
 class ApplicationWindow(QObject):
@@ -79,7 +79,7 @@ class ApplicationWindow(QObject):
         self.axis_x = QtCharts.QValueAxis()
         self.axis_x.setTitleText("Energy [keV]")
         self.axis_x.setRange(0, 100)
-        self.axis_x.setLabelFormat("%.1f")
+        self.axis_x.setLabelFormat("%.0f")
 
         self.axis_y = QtCharts.QValueAxis()
         self.axis_y.setTitleText("Intensity [a.u.]")
@@ -152,8 +152,11 @@ class ApplicationWindow(QObject):
 
         self.model.endResetModel()
 
-        self.axis_x.setRange(0, MAX_ENERGY.value)
-        self.axis_y.setRange(0, MAX_COUNT.value)
+        print("max energy: ", self.coins.max_energy)
+        print("max count: ", self.coins.max_count)
+
+        self.axis_x.setRange(0, self.coins.max_energy)
+        self.axis_y.setRange(0, self.coins.max_count)
 
         self.series_dict.clear()
         self.chart.removeAllSeries()
@@ -200,11 +203,10 @@ class ApplicationWindow(QObject):
                         pca_matrix_idx = self.coins.labels.index(name)
                         spectrum = self.coins.spectrum[pca_matrix_idx, :]
                         nchannels = spectrum.size
-                        xaxis = np.linspace(0, MAX_ENERGY.value, nchannels)
+                        xaxis = np.linspace(0, self.coins.max_energy, nchannels)
 
                         series = QtCharts.QLineSeries(self.window)
                         series.setName(name)
-                        # series.setUseOpenGL(True)
                         series.hovered.connect(lambda point, state, name=name: self.on_hover(point, state, name))
 
                         for n in range(nchannels):
@@ -215,7 +217,10 @@ class ApplicationWindow(QObject):
                     if name not in names_added:
                         self.chart.addSeries(self.series_dict[name])
 
-                        self.reset_zoom()
+                        # self.series_dict[name].attachAxis(self.axis_x)
+                        # self.series_dict[name].attachAxis(self.axis_y)
+
+                    self.reset_zoom()
 
             for s in series_added:
                 if s.name() not in names_selected:
@@ -239,7 +244,7 @@ class ApplicationWindow(QObject):
 
     def on_hover(self, point, state, name):
         if state:
-            self.label_mouse_coords.setText("x = {0:.6f}, y = {1:.6f}".format(point.x(), point.y()))
+            self.label_mouse_coords.setText("energy = {0:.1f}, intensity = {1:.0f}".format(point.x(), point.y()))
 
             self.callout.set_text(name)
             self.callout.set_anchor(point)
