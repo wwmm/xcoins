@@ -9,21 +9,12 @@ class Model(QAbstractTableModel):
     def __init__(self):
         QAbstractTableModel.__init__(self)
 
-        self.ncols = 4
-        nrows = 1  # initial number of rows
+        self.ncols = 1
 
-        self.data_name = np.empty(nrows, dtype="object")
-        self.data_file_1 = np.empty(nrows, dtype="object")
-        self.data_file_2 = np.empty(nrows, dtype="object")
-        self.data_file_3 = np.empty(nrows, dtype="object")
-
-        self.data_name[0] = "sample name"
-        self.data_file_1[0] = "file 1"
-        self.data_file_2[0] = "file 2"
-        self.data_file_3[0] = "file 3"
+        self.data_name = ["sample name"]
 
     def rowCount(self, parent=QModelIndex()):
-        return self.data_name.size
+        return len(self.data_name)
 
     def columnCount(self, parent=QModelIndex()):
         return self.ncols
@@ -44,11 +35,7 @@ class Model(QAbstractTableModel):
         if role == Qt.ForegroundRole:
             row = index.row()
 
-            if (self.data_file_1[row] == "missing" or self.data_file_2[row] == "missing" or
-                    self.data_file_3[row] == "missing"):
-                return QColor(244, 67, 54, 222)
-            else:
-                return QColor(0, 0, 0, 222)
+            return QColor(0, 0, 0, 222)
 
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignRight
@@ -60,15 +47,6 @@ class Model(QAbstractTableModel):
             if column == 0:
                 return self.data_name[row]
 
-            if column == 1:
-                return self.data_file_1[row]
-
-            if column == 2:
-                return self.data_file_2[row]
-
-            if column == 3:
-                return self.data_file_3[row]
-
     def remove_rows(self, index_list):
         index_list.sort(reverse=True)
 
@@ -77,6 +55,3 @@ class Model(QAbstractTableModel):
             self.endRemoveRows()
 
         self.data_name = np.delete(self.data_name, index_list)
-        self.data_file_1 = np.delete(self.data_file_1, index_list)
-        self.data_file_2 = np.delete(self.data_file_2, index_list)
-        self.data_file_3 = np.delete(self.data_file_3, index_list)

@@ -102,7 +102,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Read Tag File</string>
+         <string>Load Spectrums</string>
         </property>
        </widget>
       </item>

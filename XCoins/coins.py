@@ -2,7 +2,7 @@
 
 import os
 import xml.etree.ElementTree as et
-from collections import OrderedDict
+from operator import add
 
 import numpy as np
 from PySide2.QtCore import QObject, Signal
@@ -16,7 +16,11 @@ def read_spectrum(path):
 
     max_count = np.max(spectrum)
 
-    return spectrum, max_energy, max_count
+    file_name = os.path.basename(path)
+
+    name = file_name.split("_")[0]
+
+    return name, spectrum, max_energy, max_count
 
 
 class Coins(QObject):
@@ -37,72 +41,58 @@ class Coins(QObject):
         self.pool = multiprocessing_pool
 
     def load_file(self, path):
-        self.working_directory = os.path.dirname(path)
+        self.working_directory = path
 
         print("coins working directory: ", self.working_directory)
 
-        self.tags = np.genfromtxt(path, delimiter=";", dtype=str).T
+        spx_name_set = set()
+        spx_file_list = []
 
-        print("coins tag matrix shape: ", self.tags.shape)
+        for f in os.listdir(self.working_directory):
+            if f.endswith(".spx"):
+                spx_name_set.add(f.split("_")[0])
 
-        self.build_pca_matrix()
+                spx_file_list.append(os.path.join(self.working_directory, f))
 
-    def build_pca_matrix(self):
+        if len(spx_file_list) > 0:
+            self.labels = list(spx_name_set)
+
+            self.labels.sort()
+
+            self.build_pca_matrix(spx_file_list)
+
+    def build_pca_matrix(self, file_list):
         self.spectrum = []
-        self.labels = []
-        f_list = []
-        self.tags_found = []
 
-        for row in self.tags:
-            aux_row = [row[0]]
+        map_output = self.pool.map(read_spectrum, file_list)
 
-            for n, col in enumerate(row):
-                if n > 0:
-                    f_path = os.path.join(self.working_directory, col + ".spx")
-
-                    if os.path.isfile(f_path):
-                        self.labels.append(row[0])
-
-                        f_list.append(f_path)
-
-                        aux_row.append(col)
-                    else:
-                        print("file not found: ", f_path)
-
-                        aux_row.append("missing")
-
-            self.tags_found.append(aux_row)
-
-        self.tags_found = np.asarray(self.tags_found)
-
-        map_output = self.pool.map(read_spectrum, f_list)
-
-        for s, energy, count in map_output:
-            self.spectrum.append(s)
-
+        for name, s, energy, count in map_output:
             if energy > self.max_energy:
                 self.max_energy = energy
 
             if count > self.max_count:
                 self.max_count = count
 
-        self.labels = list(OrderedDict.fromkeys(self.labels))
+        for label in self.labels:
+            spectrum_row = []
+            count = 0
+
+            for name, s, energy, count in map_output:
+                if name == label:
+                    if len(spectrum_row) == 0:
+                        spectrum_row = s
+
+                        count = 1
+                    else:
+                        spectrum_row = list(map(add, spectrum_row, s))
+
+                        count = count + 1
+
+            if count > 0:
+                spectrum_row = [x / count for x in spectrum_row]
+
+            self.spectrum.append(spectrum_row)
+
         self.spectrum = np.asarray(self.spectrum)
-
-        print("spectrum shape: ", self.spectrum.shape)
-
-        """
-            In order to the average fast we reshape the matrix in a higher dimensionality. It is now a cube where
-            each horizontal slice is a matrix with 3 rows and spectrum.shape[1] columns. The number of slices is
-            int(spectrum.shape[0] / 3). After the reshape the average of each 3 measurements can be done applying
-            np.mean in the axis = 1 (the one with 3 rows)
-        """
-
-        if self.spectrum.shape[0] % 3 == 0:
-            self.spectrum = self.spectrum.reshape(int(self.spectrum.shape[0] / 3), 3, self.spectrum.shape[1])
-
-            self.spectrum = np.mean(self.spectrum, axis=1)
-        else:
-            print("Spectrum matrix has wrong size. Can not calculate average!")
 
         self.new_spectrum.emit()

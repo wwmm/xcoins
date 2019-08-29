@@ -135,20 +135,17 @@ class ApplicationWindow(QObject):
         return effect
 
     def read_tags(self):
-        file_path = QFileDialog.getOpenFileName(self.window, "Open File", os.path.expanduser("~"),
-                                                "Coin Tags (*.csv);; *.* (*.*)")[0]
+        dir_path = QFileDialog.getExistingDirectory(self.window, "Select a Directory", os.path.expanduser("~"),
+                                                    QFileDialog.ShowDirsOnly)
 
-        if file_path != "":
-            t = threading.Thread(target=self.coins.load_file, args=(file_path,), daemon=True)
+        if dir_path != "":
+            t = threading.Thread(target=self.coins.load_file, args=(dir_path,), daemon=True)
             t.start()
 
     def on_new_spectrum(self):
         self.model.beginResetModel()
 
-        self.model.data_name = self.coins.tags_found[:, 0]
-        self.model.data_file_1 = self.coins.tags_found[:, 1]
-        self.model.data_file_2 = self.coins.tags_found[:, 2]
-        self.model.data_file_3 = self.coins.tags_found[:, 3]
+        self.model.data_name = self.coins.labels
 
         self.model.endResetModel()
 
@@ -176,7 +173,7 @@ class ApplicationWindow(QObject):
                 dset.attrs["pca_sample_labels"] = self.coins.labels
 
     def selection_changed(self, selected, deselected):
-        if self.model.data_name.size == 1:
+        if len(self.model.data_name) == 1:
             return
 
         s_model = self.table_view.selectionModel()
