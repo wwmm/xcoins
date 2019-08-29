@@ -20,7 +20,7 @@ class Model(QAbstractTableModel):
         return self.ncols
 
     def flags(self, index):
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole:
@@ -30,6 +30,18 @@ class Model(QAbstractTableModel):
             return ("Name", "File 1", "File 2", "File 3")[section]
 
         return "{}".format(section)
+
+    def setData(self, index, value, role):
+        if index.isValid() and role == Qt.EditRole:
+            column = index.column()
+            row = index.row()
+
+            if column == 0:
+                self.data_name[row] = value
+
+                self.dataChanged.emit(index, index)
+
+        return False
 
     def data(self, index, role):
         if role == Qt.ForegroundRole:

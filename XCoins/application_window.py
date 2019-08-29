@@ -70,6 +70,7 @@ class ApplicationWindow(QObject):
         button_reset_zoom.clicked.connect(self.reset_zoom)
         self.table_view.selectionModel().selectionChanged.connect(self.selection_changed)
         self.coins.new_spectrum.connect(self.on_new_spectrum)
+        self.model.dataChanged.connect(self.data_changed)
 
         # Creating QChart
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
@@ -250,3 +251,6 @@ class ApplicationWindow(QObject):
             self.callout.show()
         else:
             self.callout.hide()
+
+    def data_changed(self, top_left_index, bottom_right_index, roles):
+        self.coins.labels = self.model.data_name
